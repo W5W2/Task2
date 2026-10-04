@@ -1,0 +1,102 @@
+#1.User Input
+def vehicle_data():      #定义各项数值
+    user_id = input("User id: ").strip()
+    vehicle_number = input("Vehicle number: ").strip()
+    member_type = input("Member type(Normal/Stuff/Student/First time): ").strip()
+    charge_type = input("Charge type(AC/DC): ").strip()
+    hours_charged = float(input("Hours charged: "))
+    special_conditions = input("Special condition(Peak/Idle/Rfid lost/eco pass/none): ").strip()
+    return user_id, vehicle_number, member_type, charge_type, hours_charged, special_conditions
+
+#2. Charging Fee Calculation
+def cal_charge_fee(charge_type , hours_charged):
+    if charge_type == "AC":             #AC模式下收费规则
+        if hours_charged <= 2:
+            rate = 4
+        elif hours_charged <= 4:
+            rate = 6
+        elif hours_charged <= 6:
+            rate = 8
+        else:
+            return min(hours_charged * 12, 80)
+    else:                             #DC模式下收费规则
+        if hours_charged <= 2:
+            rate = 10
+        elif hours_charged <= 4:
+            rate = 15
+        elif hours_charged <= 6:
+            rate = 20
+        else:
+            return min(hours_charged * 30, 150)
+    return hours_charged * rate                 #收费
+
+#3.Discount and Waiver Evaluation
+def discount_waiver(member_type, charge_type, charge_fee, special_conditions):
+    if member_type == "First time":
+        discount = charge_fee               #first time 折扣
+    elif member_type == "Stuff":
+        discount = charge_fee * 0.5         #stuff折扣
+    elif member_type == "Student":
+        discount = charge_fee * 0.25        #student折扣
+    else :
+        discount = 0
+    return discount , charge_fee - discount        #计算价格
+
+def ecopass_discount(special_conditions):
+    eco_discount = 0
+    if special_conditions == "eco pass" :
+        eco_discount = 2
+    return eco_discount       #eco折扣
+
+#4.Surcharge & Fee Addition           #额外附加费
+def surcharge(special_conditions):
+    surcharge_fee = 0
+    if special_conditions == "Peak" :
+        surcharge_fee = surcharge_fee + 5
+    if special_conditions == "Idle" :
+        surcharge_fee = surcharge_fee + 15
+    if special_conditions == ("Rfid") :
+        surcharge_fee = surcharge_fee + 30
+    return surcharge_fee
+
+#5.Formatted Bill Output Display        #总计花费
+def total_payment(discount_waiver,surcharge):
+    total_payment = discount_waiver + surcharge - ecopass_discount
+    return total_payment
+
+def print_bill(user_id, vehicle_number, member_type,               #展示账单细则
+               charge_type, charge_fee,discount,
+               hours_charged,eco_discount,discount_waiver,
+               surcharge,surcharge_fee,total_payment):
+    print(f"User ID:  {user_id}")
+    print(f"Vehicle Number:  {vehicle_number}")
+    print(f"Member Type:  {member_type}")
+    print(f"Charge Type:  {charge_type}")
+    print(f"hours Charged:  {hours_charged}")
+    print(f"charge fee:  {charge_fee:.2f}")
+    print(f"Discount:  {discount:.2f}")
+    print(f"Discount Waiver:  {charge_fee - discount:.2f}")
+    print(f"Surcharge Fee:  {surcharge_fee:.2f}")
+    print(f"Total Payment:  {total_payment:.2f}")
+
+# 6 Continuous Program Loop                   #可循环使用
+def process():
+    (user_id,vehicle_number,member_type,charge_type,hours_charged,special_conditions) = vehicle_data()
+    charge_fee = cal_charge_fee(charge_type,hours_charged)
+    discount , fee_after_discount = discount_waiver(member_type,charge_type,charge_fee, special_conditions)
+    surcharge_fee = surcharge(special_conditions)
+    eco_discount_amount = ecopass_discount(special_conditions)
+    total_payment = fee_after_discount + surcharge_fee - eco_discount_amount
+    print_bill(user_id, vehicle_number, member_type,
+               charge_type, charge_fee,discount,hours_charged,ecopass_discount,discount_waiver,
+               surcharge,surcharge_fee,total_payment)
+
+def main():
+    while True:
+        process()
+        again = input("Do you want to continue? (y/n): ").strip()
+        if again == "n":
+            break
+
+if __name__ == "__main__":
+    main()
