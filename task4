@@ -1,0 +1,124 @@
+from os import linesep
+
+
+class User:        #对user打包
+    def __init__(self, user_id, vehicle_number):        #定义user
+        self.__user_id = user_id
+        self.__vehicle_number = vehicle_number
+    def get_user_id(self):                              #抓取user信息
+        return self.__user_id
+    def get_vehicle_number(self):                      #抓取车辆信息
+        return self.__vehicle_number
+    def calculate_fee(self,gross_fee,charger_type = "AC"):    #识别充电模式
+        return gross_fee
+    def get_member_type(self):
+        return "normal"
+
+class MemberUser(User):        #对memberuser打包
+    def __init__(self, user_id, vehicle_number,member_type):        #定义menmberuser
+        super().__init__(user_id, vehicle_number)
+        self.__member_type = member_type
+    def get_member_type(self):                                     #抓取memberuser类型 
+        return self.__member_type
+    def set_member_type(self,member_type):                          #设置memberuser类型
+        valid = ("normal","stuff","student","first time")
+        self.__member_type = member_type
+    def calculate_fee(self,gross_fee,charger_type = "AC"):          #不同memberuser折扣类型
+        if self.__member_type == "first time":
+            return gross_fee * 0
+        if self.__member_type == "stuff":
+            return gross_fee * 0.5
+        if self.__member_type == "student" and charger_type == "AC":
+            return gross_fee * 0.75
+        return gross_fee
+
+class EVCharger:        #对evcharger打包
+    def __init__(self,charger_type):              #定义充电类型
+        self.__charger_type = charger_type
+    def get_charger_type(self):                   #抓取充电类型
+        return self.__charger_type
+    def set_charger_type(self,charger_type):      #设置充电类型
+        self.__charger_type = charger_type
+    def calculate_fee(self,hours_charged):        #不同充电类型不同收费准则
+        total_hours = float(hours_charged)
+        if self.__charger_type == "AC":
+            if total_hours <= 2:
+                rate = 4
+            elif total_hours <= 4:
+                rate = 6
+            elif total_hours <= 6:
+                rate = 8
+            else:
+                return min(total_hours * 12, 80)
+        else:
+            if total_hours <= 2:
+                rate = 10
+            elif total_hours <= 4:
+                rate = 15
+            elif total_hours <= 6:
+                rate = 20
+            else:
+                return min(total_hours * 30, 150)
+        return total_hours *rate
+
+class ChargingSession:          #对充电流程打包
+    def __init__(self,user,charger,hours_charged,special_conditions):      #定义充电流程
+        self.__user = user
+        self.__charger = charger
+        self.__hours_charged = hours_charged
+        self.__special_conditions = special_conditions
+    def get_user(self):                                                   #获取之前信息
+        return self.__user
+    def get_charger(self):
+        return self.__charger
+    def generate_bill(self):                                              #计算额外费用
+        gross_fee = self.__charger.calculate_fee(self.__hours_charged)
+        discounted = self.__user.calculate_fee(gross_fee,self.__charger.get_charger_type())
+
+        surcharge = 0
+        if "peak" in self.__special_conditions:
+            surcharge = surcharge + 5
+        if "idle" in self.__special_conditions:
+            surcharge = surcharge + 15
+        if "rfid lost" in self.__special_conditions:
+            surcharge = surcharge + 30
+        if "eco pass" in self.__special_conditions:
+            eco_discount = 2
+        else:
+            eco_discount = 0
+
+        total_payable = discounted + surcharge - eco_discount        #计算总账
+
+        lines = [f"User ID : {self.__user.get_user_id()}",           #展示收费细节
+                 f"Member Type : {self.__user.get_member_type()}",
+                 f"Vehicle Number : {self.__user.get_vehicle_number()}",
+                 f"Charger Type : {self.__charger.get_charger_type()}",
+                 f"Total Hours :{float(self.__hours_charged)}",
+                 f"Gross Charging Fee ：{gross_fee:.2f}",
+                 f"Discount : {gross_fee - discounted:.2f}",
+                 f"Fee After Discount : {discounted:.2f}",
+                 f"Surcharges : {surcharge:.2f}",
+                 f"ECOPASS Discount : {eco_discount:.2f}",
+                 f"Total Payable : {total_payable:.2f}",
+                 "-" * 30]
+        return "\n".join(lines)
+
+def main():
+    stuff_user = MemberUser("U001", "ABC123", "stuff")
+    first_user = MemberUser("U002", "DEF456", "first time")
+    student_user = MemberUser("U003", "GHI789", "student")
+    normal_user = User("U004", "XYZ910")
+    charger_ac = EVCharger("AC")
+    charger_dc = EVCharger("DC")
+    session_1 = ChargingSession(stuff_user, charger_ac, 2.5, ["peak"])
+    session_2 = ChargingSession(first_user, charger_dc, 7.0, ["idle",])
+    session_3 = ChargingSession(student_user, charger_ac, 3.0, ["eco pass"])
+    session_4 = ChargingSession(normal_user, charger_dc, 1.0, ["rfid lost"])
+    for session in (session_1, session_2, session_3, session_4):
+         print("Session")
+         print(session.generate_bill())
+
+
+
+if __name__ == "__main__":
+        main()
